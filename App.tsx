@@ -23,6 +23,7 @@ import AccountChatFlow from './src/screen/AccountChat/AccountChatFlow';
 import QRCodeScannerScreen from './src/screen/QrCodeScreen/QRCodeScannerScreen';
 import ConfirmPaymentScreen from './src/screen/ConfirmPaymentScreen/ConfirmPayment';
 import PixConfirmationScreen from './src/screen/ConfirmPaymentScreen/ConfirmPayment';
+import CofrinhosScreen from './src/screen/CofrinhosScreen/CofrinhosScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -80,6 +81,7 @@ export default function App() {
            <Stack.Screen name="LerQrdCode" component={QRCodeScannerScreen} />
            <Stack.Screen name="ConfirmPayment" component={ConfirmPaymentScreen} />
            <Stack.Screen name="PixConfirmation" component={PixConfirmationScreen} />
+           <Stack.Screen name="Cofrinhos" component={CofrinhosScreen} />
 
         </Stack.Navigator>
       </NavigationContainer>

@@ -8,9 +8,10 @@ import { useBalance } from '../../contexts/BalanceContext';
 type Props = {
   onPixPress: () => void;
   onQrCode: () => void;
+  onCofrinhos: () => void;
 };
 
-export function BalanceCard({ onPixPress, onQrCode }: Props) {
+export function BalanceCard({ onPixPress, onQrCode, onCofrinhos }: Props) {
   const { balance, showBalance, toggleBalance } = useBalance();
 
   const data = [
@@ -23,6 +24,8 @@ export function BalanceCard({ onPixPress, onQrCode }: Props) {
   const handlePress = (label: string) => {
     if (label === 'Pix') onPixPress();
     else if (label === 'Ler QR Code') onQrCode();
+    else if (label === 'Cofrinhos') onCofrinhos();
+
   };
 
   return (

@@ -14,8 +14,9 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './style';
-import { steps } from '../../contexts/Steps';
-import { formatValue, isValidCPF } from '../../contexts/Formatters';
+import { steps } from '../../utils/Steps';
+import { formatValue } from '../../contexts/Formatters';
+import { validateInput } from '../../utils/validators';
 
 const botAvatar = require('../../../assets/bot.png');
 
@@ -27,13 +28,12 @@ export default function AccountChatFlow() {
   const [answers, setAnswers] = useState<any>({});
   const [isTyping, setIsTyping] = useState(false);
   const [showRating, setShowRating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const scrollRef = useRef<ScrollView>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
-
   const current = step < steps.length ? steps[step] : null;
   const [isFinished, setIsFinished] = useState(false);
-
 
   const scrollToBottom = () => {
     scrollRef.current?.scrollToEnd({ animated: true });
@@ -59,9 +59,7 @@ export default function AccountChatFlow() {
   };
 
   useEffect(() => {
-    if (current) {
-      showBotMessage(current.label);
-    }
+    if (current) showBotMessage(current.label);
   }, [step]);
 
   useEffect(() => {
@@ -76,44 +74,45 @@ export default function AccountChatFlow() {
       const data = await response.json();
       if (data.erro) throw new Error('CEP inválido');
       return `${data.logradouro}, ${data.bairro} - ${data.localidade}/${data.uf}`;
-    } catch (err) {
-      alert('Erro ao buscar endereço. Verifique o CEP.');
+    } catch {
+      setErrorMessage('Erro ao buscar endereço. Verifique o CEP.');
       return '';
     }
   };
 
   const handleNext = async () => {
-    if (!current) return;
-    Keyboard.dismiss();
+  if (!current) return;
+  Keyboard.dismiss();
 
-    if (current.type === 'file') {
-      setAnswers((prev: any) => ({ ...prev, [current.key]: current.image }));
-      setStep((prev) => prev + 1);
-      return;
-    }
-
-    if (!inputValue.trim()) return;
-
-    if (current.type === 'cpf' && !isValidCPF(inputValue)) {
-      alert('CPF inválido!');
-      return;
-    }
-
-    const formatted = formatValue(current.key, inputValue.trim());
-    setMessages((prev) => [...prev, { from: 'user', text: formatted, time: getCurrentTime() }]);
-
-    if (current.key === 'cep') {
-      const addressStr = await fetchAddressFromCEP(formatted);
-      if (!addressStr) return;
-      setAnswers((prev: any) => ({ ...prev, cep: formatted, address: addressStr }));
-    } else {
-      setAnswers((prev: any) => ({ ...prev, [current.key]: formatted }));
-    }
-
-    setInputValue('');
-    setStep((prev) => prev + 1);
-    resetInactivityTimer();
+  const addBotMessage = (msg: string) => {
+    setMessages((prev) => [...prev, { from: 'bot', text: msg, time: getCurrentTime() }]);
   };
+
+  if (current.type === 'file') {
+    setAnswers((prev: any) => ({ ...prev, [current.key]: current.image }));
+    setStep((prev) => prev + 1);
+    return;
+  }
+
+  if (!inputValue.trim() || !validateInput(inputValue.trim(), current.type, setErrorMessage, addBotMessage)) return;
+
+  const formatted = formatValue(current.key, inputValue.trim());
+  setMessages((prev) => [...prev, { from: 'user', text: formatted, time: getCurrentTime() }]);
+
+  if (current.key === 'cep') {
+    const addressStr = await fetchAddressFromCEP(formatted);
+    if (!addressStr) return;
+    setAnswers((prev: any) => ({ ...prev, cep: formatted, address: addressStr }));
+  } else {
+    setAnswers((prev: any) => ({ ...prev, [current.key]: formatted }));
+  }
+
+  setInputValue('');
+  setErrorMessage('');
+  setStep((prev) => prev + 1);
+  resetInactivityTimer();
+};
+
 
   const renderReview = () => {
     const keysToShow = ['name', 'cpf', 'birthDate', 'email', 'phone', 'cep', 'address', 'houseNumber'];
@@ -133,7 +132,6 @@ export default function AccountChatFlow() {
             ]);
             setShowRating(true);
           }}
-
         >
           <Text style={styles.buttonText}>Confirmar</Text>
         </TouchableOpacity>
@@ -197,7 +195,6 @@ export default function AccountChatFlow() {
 
           {current?.key === 'review' && !isFinished && renderReview()}
 
-
           {isTyping && (
             <View style={styles.typing}>
               <Text style={styles.typingDot}>• • •</Text>
@@ -228,9 +225,14 @@ export default function AccountChatFlow() {
                   placeholder="Digite aqui..."
                   placeholderTextColor="#888"
                   value={inputValue}
-                  onChangeText={setInputValue}
+                  onChangeText={(text) => {
+                    setInputValue(text);
+                    if (errorMessage) setErrorMessage('');
+                  }}
                   keyboardType={['cpf', 'birthDate', 'phone', 'cep'].includes(current.type) ? 'numeric' : current.type === 'email' ? 'email-address' : 'default'}
                 />
+                {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
                 <TouchableOpacity style={styles.button} onPress={handleNext}>
                   <Text style={styles.buttonText}>Enviar</Text>
                 </TouchableOpacity>

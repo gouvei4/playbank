@@ -128,6 +128,11 @@ ratingText: {
   fontWeight: '600',
   color: '#333',
 },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 8,
+  },
 
 
 });

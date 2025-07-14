@@ -22,6 +22,8 @@ export default function HomeScreen() {
           toggleBalance={() => setShowBalance(!showBalance)}
           onPixPress={() => navigation.navigate('PixScreen')}
           onQrCode={() => navigation.navigate('LerQrdCode')}
+          onCofrinhos={() => navigation.navigate('Cofrinhos')}
+
         />
         <QuickActionsCard />
         <LoanCard />
